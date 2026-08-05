@@ -26,6 +26,7 @@ mexanizmi orqali.
 from __future__ import annotations
 
 import time
+import re
 import requests
 
 # ── Sozlamalar ─────────────────────────────────────────────────────────────
@@ -127,8 +128,29 @@ def _search_entity(query: str, lang: str, entity_type: str = "item") -> list[dic
     return data.get("search", [])
 
 
+def _normalize_for_match(text: str) -> str:
+    """
+    Taqqoslash uchun matnni soddalashtiradi: turli apostrof variantlarini
+    (', ʻ, ʼ, ‘, ’) bitta shaklga keltiradi va kichik harflarga o'tkazadi.
+    Bu, masalan, "Oʻzbekiston" (imlo tuzatilgan, ʻ belgisi bilan) va
+    Wikidata'dagi "Oʻzbekiston" yozuvi turli apostrof belgilar tufayli
+    "mos kelmadi" deb hisoblanib qolishining oldini oladi.
+    """
+    text = text.lower().strip()
+    for ch in ("'", "ʻ", "ʼ", "‘", "’", "`"):
+        text = text.replace(ch, "")
+    return re.sub(r"\s+", " ", text)
+
+
 def _resolve_entity_id(query: str, lang: str) -> tuple[str | None, str]:
-    """Element ID'sini topadi, kerak bo'lsa FALLBACK_LANG bilan qayta qidiradi."""
+    """
+    Element ID'sini topadi. Agar qidiruv natijalari orasida so'ralgan nomga
+    ANIQ mos keladigan element bo'lsa — o'shani tanlaydi (apostrof/registr
+    farqlariga qaramay). Aks holda Wikidata'ning birinchi (eng yaqin) natijasi
+    olinadi. Bu, masalan, "Oʻzbekiston" so'ralganda tasodifan "Oʻzbeklar"
+    (boshqa, aloqasi yo'q element) tanlanib qolishining oldini oladi.
+    Kerak bo'lsa FALLBACK_LANG bilan qayta qidiradi.
+    """
     hits = _search_entity(query, lang)
     used_lang = lang
     if not hits and lang != FALLBACK_LANG:
@@ -136,6 +158,12 @@ def _resolve_entity_id(query: str, lang: str) -> tuple[str | None, str]:
         hits = _search_entity(query, FALLBACK_LANG)
     if not hits:
         return None, used_lang
+
+    target = _normalize_for_match(query)
+    for h in hits:
+        if _normalize_for_match(h.get("label", "")) == target:
+            return h["id"], used_lang
+
     return hits[0]["id"], used_lang
 
 

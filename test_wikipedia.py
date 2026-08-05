@@ -12,6 +12,13 @@ Internet aloqasi kerak (wikipedia.org / wikidata.org ga chiqish).
 from actions.wikipedia_action import wikipedia_action
 from actions.wikidata_action import wikidata_action
 
+try:
+    from actions.wiki_smart import wiki_lookup
+    _SMART_AVAILABLE = True
+except Exception as e:
+    _SMART_AVAILABLE = False
+    _SMART_IMPORT_ERROR = e
+
 
 def run_case(title: str, func, params: dict) -> None:
     print("=" * 70)
@@ -41,6 +48,23 @@ def main() -> None:
     run_case("WD PROPERTY (aholi)", wikidata_action, {
         "action": "property", "query": "Toshkent", "lang": "uz", "prop": "aholisi",
     })
+
+    # ── WIKI_SMART: Gemini tarjima qatlami bilan to'liq oqim ────────────
+    # E'TIBOR: bu qism uchun config/api_keys.json ichida haqiqiy
+    # gemini_api_key kerak (config/api_keys.json.example'ga qarang).
+    if _SMART_AVAILABLE:
+        run_case("SMART auto (o'zbekcha so'rov -> inglizcha qidiruv -> o'zbekcha javob)",
+                  wiki_lookup, {"query": "amir temur", "source": "wikipedia"})
+        run_case("SMART uz (imlo xato bilan)",
+                  wiki_lookup, {"query": "ozbekistn aholisi qancha", "source": "wikidata",
+                                "mode": "property", "prop": "aholisi", "lang_hint": "uz"})
+        run_case("SMART auto (inglizcha so'rov)",
+                  wiki_lookup, {"query": "black holes", "source": "wikipedia", "mode": "summary"})
+    else:
+        print("=" * 70)
+        print(f"[SMART testlar o'tkazib yuborildi] Sabab: {_SMART_IMPORT_ERROR}")
+        print("config/api_keys.json faylini yarating (namuna: config/api_keys.json.example)")
+        print()
 
     # ── Interaktiv rejim ──────────────────────────────────────────────────
     print("=" * 70)
