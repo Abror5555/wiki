@@ -222,3 +222,7 @@ me'yorda — `run_in_executor` orqali asosiy ovozli oqim bloklanmasligi
 allaqachon ta'minlangan.
 
 Shu bilan tayyor. Sinab ko'rib, biror joyda muammo chiqsa — ayting.
+
+## Litsenziya
+
+[MIT](LICENSE) © 2026 Abror Kushshiyev
