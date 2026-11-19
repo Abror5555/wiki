@@ -1,23 +1,31 @@
 """
-test_wikipedia.py
-──────────────────
-Wikipedia va Wikidata modullarini Avelia'siz, mustaqil sinash uchun skript.
+examples/demo.py
+────────────────
+uzwiki imkoniyatlarini ko'rsatuvchi va interaktiv sinash uchun skript.
 
 Ishga tushirish:
-    python test_wikipedia.py
+    pip install uzwiki            # yoki repo ichida: pip install -e .
+    python examples/demo.py
 
 Internet aloqasi kerak (wikipedia.org / wikidata.org ga chiqish).
+SMART testlar uchun: pip install "uzwiki[gemini]" va GEMINI_API_KEY.
 """
 
-from actions.wikipedia_action import wikipedia_action
-from actions.wikidata_action import wikidata_action
+import importlib.util
+import os
 
-try:
-    from actions.wiki_smart import wiki_lookup
-    _SMART_AVAILABLE = True
-except Exception as e:
-    _SMART_AVAILABLE = False
-    _SMART_IMPORT_ERROR = e
+from uzwiki import wiki_lookup, wikidata_action, wikipedia_action
+
+def _genai_installed() -> bool:
+    try:
+        return importlib.util.find_spec("google.genai") is not None
+    except ModuleNotFoundError:
+        return False
+
+
+_SMART_AVAILABLE = _genai_installed() and bool(
+    os.getenv("GEMINI_API_KEY") or os.path.isfile(os.path.join("config", "api_keys.json"))
+)
 
 
 def run_case(title: str, func, params: dict) -> None:
@@ -50,8 +58,8 @@ def main() -> None:
     })
 
     # ── WIKI_SMART: Gemini tarjima qatlami bilan to'liq oqim ────────────
-    # E'TIBOR: bu qism uchun config/api_keys.json ichida haqiqiy
-    # gemini_api_key kerak (config/api_keys.json.example'ga qarang).
+    # E'TIBOR: bu qism uchun google-genai va Gemini API kaliti kerak
+    # (GEMINI_API_KEY yoki config/api_keys.json — config/api_keys.json.example'ga qarang).
     if _SMART_AVAILABLE:
         run_case("SMART auto (o'zbekcha so'rov -> inglizcha qidiruv -> o'zbekcha javob)",
                   wiki_lookup, {"query": "amir temur", "source": "wikipedia"})
@@ -62,8 +70,8 @@ def main() -> None:
                   wiki_lookup, {"query": "black holes", "source": "wikipedia", "mode": "summary"})
     else:
         print("=" * 70)
-        print(f"[SMART testlar o'tkazib yuborildi] Sabab: {_SMART_IMPORT_ERROR}")
-        print("config/api_keys.json faylini yarating (namuna: config/api_keys.json.example)")
+        print("[SMART testlar o'tkazib yuborildi] google-genai yoki Gemini API kaliti topilmadi.")
+        print('O\'rnatish: pip install "uzwiki[gemini]" va GEMINI_API_KEY ni o\'rnating.')
         print()
 
     # ── Interaktiv rejim ──────────────────────────────────────────────────

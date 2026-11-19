@@ -1,6 +1,6 @@
 """
-actions/wikipedia_action.py
-────────────────────────────
+uzwiki.wikipedia
+────────────────
 Wikipedia integratsiyasi — MediaWiki Action API orqali (api.php).
 
 Wikipedia API to'liq BEPUL va API kalit talab qilmaydi, lekin Wikimedia
@@ -16,9 +16,6 @@ Qo'llab-quvvatlanadigan action'lar:
 
 Bir nechta tilni qo'llab-quvvatlaydi (lang parametri, masalan: "uz", "en", "ru").
 Agar so'ralgan tilda maqola topilmasa, avtomatik inglizcha (en) ga fallback qiladi.
-
-Bu fayl mustaqil ishlaydi (Avelia'ga bog'liq emas) — keyinchalik shunchaki
-Avelia loyihasidagi actions/ papkasiga ko'chirib qo'yish kifoya.
 """
 
 from __future__ import annotations
@@ -26,16 +23,17 @@ from __future__ import annotations
 import time
 import requests
 
+from uzwiki._meta import initial_user_agent
+
 # ── Sozlamalar ─────────────────────────────────────────────────────────────
 
 DEFAULT_LANG = "uz"
 FALLBACK_LANG = "en"
 
 # Wikimedia siyosati: User-Agent'da ilova nomi + aloqa (email yoki repo link) bo'lishi kerak.
-# MUHIM: shablon holida qoldirmang — umumiy/generic User-Agent'lar Wikimedia
-# tomonidan qattiqroq cheklanadi (429 xatosi ko'proq chiqadi). O'zingizning
-# haqiqiy GitHub repo linkingiz yoki email'ingizni yozing.
-USER_AGENT = "AveliaAssistant/1.0 (https://github.com/your-repo; contact@example.com)"
+# Umumiy/generic User-Agent'lar qattiqroq cheklanadi (429 xatosi ko'proq chiqadi).
+# O'zgartirish: UZWIKI_USER_AGENT muhit o'zgaruvchisi yoki uzwiki.set_user_agent().
+USER_AGENT = initial_user_agent()
 
 _session = requests.Session()
 _session.headers.update({"User-Agent": USER_AGENT})
@@ -253,9 +251,8 @@ def _do_sections(query: str, lang: str) -> str:
 
 
 # ── Tashqi interfeys ────────────────────────────────────────────────────────
-# (parameters, player=None) imzosi Avelia'dagi boshqa actions/*.py fayllar
-# bilan bir xil — keyinchalik ko'chirib qo'yishda hech narsa o'zgartirish
-# shart bo'lmaydi.
+# (parameters, player=None) imzosi ovozli yordamchilarning tool/action
+# chaqiruvlariga mos (masalan Avelia'dagi actions/*.py fayllar bilan bir xil).
 
 def wikipedia_action(parameters: dict, player=None) -> str:
     """
@@ -296,5 +293,5 @@ def wikipedia_action(parameters: dict, player=None) -> str:
         return f"wikipedia_action xatosi: {e}"
 
 
-# Boshqa actions/*.py fayllar bilan bir xil nomlash konvensiyasi uchun alias
+# Qisqa nom (alias)
 wikipedia = wikipedia_action
