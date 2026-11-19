@@ -1,6 +1,6 @@
 """
-actions/wikidata_action.py
-────────────────────────────
+uzwiki.wikidata
+───────────────
 Wikidata integratsiyasi — strukturaviy (fact-based) ma'lumotlar uchun.
 
 Wikipedia matn/hikoya beradi, Wikidata esa aniq FAKTLARNI beradi:
@@ -29,15 +29,15 @@ import time
 import re
 import requests
 
+from uzwiki._meta import initial_user_agent
+
 # ── Sozlamalar ─────────────────────────────────────────────────────────────
 
 DEFAULT_LANG = "uz"
 FALLBACK_LANG = "en"
 
-# MUHIM: shablon holida qoldirmang — o'zingizning haqiqiy GitHub repo
-# linkingiz yoki email'ingizni yozing (Wikimedia buni talab qiladi va
-# umumiy/generic User-Agent'larni qattiqroq cheklaydi).
-USER_AGENT = "AveliaAssistant/1.0 (https://github.com/your-repo; contact@example.com)"
+# Wikimedia User-Agent talab qiladi (uzwiki.wikipedia'dagi izohga qarang).
+USER_AGENT = initial_user_agent()
 
 _session = requests.Session()
 _session.headers.update({"User-Agent": USER_AGENT})
@@ -227,7 +227,8 @@ def _format_wikidata_time(val: dict) -> str:
     if precision == 8:
         return f"{year[:-1]}0-yillar"
     if precision == 7:
-        century = int(year) // 100 + 1
+        # Wikibase hisobi: 1401–1500 yillar = 15-asr (1500 -> 15-asr, 16-asr emas)
+        century = (int(year) - 1) // 100 + 1
         return f"{century}-asr"
     return year
 
@@ -377,7 +378,7 @@ def _do_property(query: str, lang: str, prop: str) -> str:
     return f"{label} — {prop_name}: {value}{note}"
 
 
-# ── Tashqi interfeys (Avelia'dagi boshqa actions/*.py bilan bir xil) ───────
+# ── Tashqi interfeys ────────────────────────────────────────────────────────
 
 def wikidata_action(parameters: dict, player=None) -> str:
     """

@@ -1,8 +1,9 @@
 """
-actions/wiki_smart.py
-────────────────────────
+uzwiki.smart
+────────────
 Wikipedia + Wikidata'ni Gemini tarjima/imlo-tekshiruv qatlami bilan
-birlashtiruvchi YAGONA tool — Avelia funksiya-chaqiruvi shu birini ishlatadi.
+birlashtiruvchi YAGONA tool — ovozli yordamchining funksiya-chaqiruvi
+(masalan Avelia'da) shu birini ishlatadi.
 
 Oqim:
   1. So'rov tili:
@@ -17,15 +18,15 @@ Oqim:
      fallback mexanizmi ham xavfsizlik-to'ri sifatida ishlab turadi).
   3. Xom natija ensure_uzbek() orqali o'tkaziladi — til aniqlanadi, agar
      o'zbekcha bo'lmasa tarjima qilinadi.
-  4. Yakuniy (har doim o'zbekcha) matn qaytariladi — Avelia buni to'g'ridan-
-     to'g'ri ovoz orqali aytadi.
+  4. Yakuniy (har doim o'zbekcha) matn qaytariladi — yordamchi buni
+     to'g'ridan-to'g'ri ovoz orqali aytishi mumkin.
 """
 
 from __future__ import annotations
 
-from actions.wikipedia_action import wikipedia_action
-from actions.wikidata_action import wikidata_action
-from actions.gemini_text_tools import (
+from uzwiki.wikipedia import wikipedia_action
+from uzwiki.wikidata import wikidata_action
+from uzwiki.gemini_tools import (
     translate_to_english,
     fix_uzbek_spelling,
     ensure_uzbek,

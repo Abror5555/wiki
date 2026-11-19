@@ -1,12 +1,16 @@
 """
-actions/gemini_text_tools.py
-──────────────────────────────
+uzwiki.gemini_tools
+───────────────────
 Wikipedia/Wikidata natijalarini tarjima qilish va foydalanuvchi so'rovini
 tozalash uchun yordamchi qatlam — Gemini matn modelidan foydalanadi.
 
-MUHIM: bu Avelia'ning ovozli (Live) Gemini sessiyasidan MUSTAQIL — bu yerda
-oddiy, bir martalik (non-streaming) `generate_content` chaqiruvlari
-ishlatiladi. Ovozli session band bo'lsa ham, bu alohida ishlayveradi.
+Bu qatlam ixtiyoriy: `pip install "uzwiki[gemini]"` bilan o'rnatiladi.
+google-genai o'rnatilmagan yoki API kalit topilmasa, funksiyalar xato
+bermaydi — shunchaki asl (tarjima qilinmagan) matnni qaytaradi.
+
+Oddiy, bir martalik (non-streaming) `generate_content` chaqiruvlari
+ishlatiladi, shuning uchun ovozli (Live) Gemini sessiyasi band bo'lsa ham
+alohida ishlayveradi.
 
 Uch vazifa:
     translate_to_english(text)  -> so'rovni (istalgan tildan) ingliz tiliga tarjima qiladi
@@ -17,34 +21,57 @@ Uch vazifa:
 from __future__ import annotations
 
 import json
+import logging
+import os
 import sys
 from pathlib import Path
 
-from google import genai
-from google.genai import types
+logger = logging.getLogger(__name__)
 
 # ── API kalitini yuklash ────────────────────────────────────────────────────
-# Avelia'ning o'zidagi bilan bir xil joydan o'qiydi: config/api_keys.json
-# Bu modul Avelia'ning actions/ papkasiga ko'chirilgach, BASE_DIR avtomatik
-# to'g'ri aniqlanadi (loyihaning ildiz papkasi).
+# Kalit quyidagi tartibda qidiriladi:
+#   1) set_api_key("...") bilan berilgan kalit
+#   2) GEMINI_API_KEY muhit o'zgaruvchisi
+#   3) joriy papkadagi config/api_keys.json  ({"gemini_api_key": "..."})
+#   4) (PyInstaller exe uchun) exe yonidagi config/api_keys.json
 
-def _get_base_dir() -> Path:
+_api_key: str | None = None
+
+
+def set_api_key(key: str) -> None:
+    """Gemini API kalitini dastur ichidan beradi."""
+    global _api_key, _client
+    _api_key = (key or "").strip() or None
+    _client = None  # keyingi chaqiruvda yangi kalit bilan klient yaratiladi
+
+
+def _config_paths() -> list[Path]:
+    paths = [Path.cwd() / "config" / "api_keys.json"]
     if getattr(sys, "frozen", False):
-        return Path(sys.executable).parent
-    # actions/gemini_text_tools.py -> ota papka (loyiha ildizi)
-    return Path(__file__).resolve().parent.parent
+        paths.append(Path(sys.executable).parent / "config" / "api_keys.json")
+    return paths
 
 
 def _get_api_key() -> str:
-    path = _get_base_dir() / "config" / "api_keys.json"
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)["gemini_api_key"]
+    if _api_key:
+        return _api_key
+    env_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if env_key:
+        return env_key
+    for path in _config_paths():
+        if path.is_file():
+            with open(path, "r", encoding="utf-8") as f:
+                key = (json.load(f).get("gemini_api_key") or "").strip()
+            if key:
+                return key
+    raise RuntimeError(
+        "Gemini API kaliti topilmadi: GEMINI_API_KEY muhit o'zgaruvchisini o'rnating, "
+        "uzwiki.set_api_key() ni chaqiring yoki config/api_keys.json yarating."
+    )
 
 
-# Tezkor, faqat-matn vazifalar uchun model (ovozli LIVE_MODEL'dan farqli).
-# O'zingizdagi google-genai SDK versiyasida mavjud bo'lgan model nomiga
-# moslab, kerak bo'lsa shu qatorni o'zgartiring (masalan main.py'dagi
-# LIVE_MODEL bilan bir oilaga tegishli, lekin "flash" / matnli variant).
+# Tezkor, faqat-matn vazifalar uchun model. Kerak bo'lsa dastur ichidan
+# o'zgartiring: uzwiki.gemini_tools.TEXT_MODEL = "models/..."
 TEXT_MODEL = "models/gemini-2.5-flash"
 
 _client = None
@@ -53,6 +80,8 @@ _client = None
 def _get_client():
     global _client
     if _client is None:
+        from google import genai  # ixtiyoriy bog'liqlik: pip install "uzwiki[gemini]"
+
         _client = genai.Client(api_key=_get_api_key(), http_options={"api_version": "v1beta"})
     return _client
 
@@ -64,6 +93,8 @@ def _generate(prompt: str, temperature: float = 0.1, max_output_tokens: int = 51
     ishlatib qoladi (tarjima ishlamasa ham, dastur to'xtab qolmasligi uchun).
     """
     try:
+        from google.genai import types
+
         client = _get_client()
         resp = client.models.generate_content(
             model=TEXT_MODEL,
@@ -76,7 +107,7 @@ def _generate(prompt: str, temperature: float = 0.1, max_output_tokens: int = 51
         text = (resp.text or "").strip()
         return text or None
     except Exception as e:
-        print(f"[gemini_text_tools] ⚠️ Gemini chaqiruvi muvaffaqiyatsiz: {e}")
+        logger.warning("Gemini chaqiruvi muvaffaqiyatsiz, asl matn qaytariladi: %s", e)
         return None
 
 

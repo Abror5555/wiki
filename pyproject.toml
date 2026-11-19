@@ -1,0 +1,55 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "uzwiki"
+dynamic = ["version"]
+description = "Wikipedia and Wikidata lookups with Uzbek defaults, English fallback and an optional Gemini translation layer."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Abror Kushshiyev", email = "abrorkushshiyev@gmail.com" }]
+keywords = ["wikipedia", "wikidata", "uzbek", "uzbekistan", "gemini", "voice-assistant", "cli"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Text Processing :: Linguistic",
+    "Typing :: Typed",
+]
+dependencies = ["requests>=2.31.0"]
+
+[project.optional-dependencies]
+gemini = ["google-genai>=0.3.0"]
+dev = ["pytest>=8", "build>=1.2", "twine>=6"]
+
+[project.scripts]
+uzwiki = "uzwiki.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Abror5555/wiki"
+Source = "https://github.com/Abror5555/wiki"
+Issues = "https://github.com/Abror5555/wiki/issues"
+
+[tool.hatch.version]
+path = "src/uzwiki/_meta.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/uzwiki"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/uzwiki", "tests", "examples", "README.md", "LICENSE", "pyproject.toml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

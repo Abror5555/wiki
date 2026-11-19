@@ -1,0 +1,16 @@
+# Haqiqiy API kalitlar hech qachon repoga tushmasin
+config/api_keys.json
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.pytest_cache/
+
+# Build
+build/
+dist/
+*.egg-info/

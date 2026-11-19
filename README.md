@@ -1,62 +1,53 @@
-# Wikipedia + Wikidata Module (mustaqil loyiha)
+# uzwiki
 
-Bu papka Avelia'ga hech qanday bog'liq emas — mustaqil sinash uchun.
-Tayyor bo'lgach, `actions/wikipedia_action.py` va `actions/wikidata_action.py`
-fayllarini Avelia loyihasidagi `actions/` papkasiga ko'chirib qo'yasiz.
+**Wikipedia va Wikidata'dan o'zbek tilida ma'lumot olish uchun Python kutubxonasi va buyruq qatori (CLI).**
 
-## 1. Kerakli kutubxonani o'rnatish
+> **English:** `uzwiki` looks up Wikipedia articles and Wikidata facts with Uzbek as the default
+> language, falls back to English automatically, and can optionally translate queries and answers
+> with Google Gemini — handy for Uzbek-speaking voice assistants and chat bots.
 
-Faqat bitta tashqi kutubxona kerak — `requests` (ikkala modul ham shuni ishlatadi).
+- 📖 **Wikipedia** — qidiruv, maqola mazmuni, to'liq matn, bo'limlar, tasodifiy maqola
+- 📊 **Wikidata** — aniq faktlar: tug'ilgan sana, aholi, poytaxt, koordinata va boshqalar
+- 🔁 **Avtomatik fallback** — o'zbekcha maqola topilmasa, inglizchasi olinadi
+- 🤖 **Gemini qatlami (ixtiyoriy)** — so'rovni tozalaydi/tarjima qiladi, javobni o'zbekchaga o'giradi
+- 🛡️ **Wikimedia qoidalariga mos** — to'g'ri User-Agent, so'rovlar orasida tanaffus, 429 da qayta urinish
+- 🎙️ **Ovozli yordamchilar uchun tayyor** — `(parameters, player=None)` imzosi tool-calling'ga mos
 
-```bash
-pip install -r requirements.txt
-```
-
-yoki to'g'ridan-to'g'ri:
-
-```bash
-pip install requests
-```
-
-(Agar Linux/Mac'da "externally-managed-environment" xatosi chiqsa:
-`pip install requests --break-system-packages`)
-
-## 2. Papka tuzilishi
-
-```
-wikipedia_project/
-├── actions/
-│   ├── wikipedia_action.py   ← matn/hikoya uchun (Wikipedia)
-│   └── wikidata_action.py    ← aniq faktlar uchun (Wikidata)
-├── test_wikipedia.py         ← ikkalasini ham sinaydigan skript
-├── requirements.txt
-└── README.md
-```
-
-## 3. Ikkisining farqi (qisqacha)
-
-| | Wikipedia (`wikipedia_action`) | Wikidata (`wikidata_action`) |
-|---|---|---|
-| Nima qaytaradi | O'qiladigan matn, paragraf | Aniq faktlar (sana, raqam, koordinata) |
-| Qachon ishlatiladi | "X kim edi?", "Y haqida gapir" | "Qachon tug'ilgan?", "Aholisi qancha?" |
-| Formati | Erkin matn | `xususiyat: qiymat` juftliklari |
-
-## 4. Sinab ko'rish
+## O'rnatish
 
 ```bash
-cd wikipedia_project
-python test_wikipedia.py
+pip install uzwiki
 ```
 
-Skript avval Wikipedia bo'yicha 6 ta, keyin Wikidata bo'yicha 5 ta test
-holatini avtomatik bajaradi, so'ng interaktiv rejimga o'tadi — manba
-(wiki/wikidata), action va tilni o'zingiz tanlab sinaysiz.
+Gemini tarjima qatlami bilan:
 
-## 5. Modullarni to'g'ridan-to'g'ri ishlatish
+```bash
+pip install "uzwiki[gemini]"
+```
+
+Python 3.10 yoki undan yangi versiya kerak.
+
+## Buyruq qatori (CLI)
+
+```bash
+uzwiki summary "Amir Temur"                 # qisqacha mazmun
+uzwiki search "sun'iy intellekt"            # maqolalarni qidirish
+uzwiki full "Python (dasturlash tili)"      # to'liq matn (4000 belgigacha)
+uzwiki sections "O'zbekiston"               # bo'limlar ro'yxati
+uzwiki random --lang en                     # tasodifiy maqola
+uzwiki facts "O'zbekiston"                  # Wikidata: asosiy faktlar
+uzwiki wd-search "Amir Temur"               # Wikidata: elementlarni qidirish
+uzwiki property "Toshkent" aholisi          # Wikidata: bitta xususiyat
+uzwiki smart "amir temur kim edi"           # Gemini qatlami bilan, javob doim o'zbekcha
+```
+
+Har bir buyruqda `--lang uz|en|ru|...` bilan tilni tanlash mumkin (standart: `uz`).
+Yordam: `uzwiki --help` yoki `uzwiki property --help`.
+
+## Python'da ishlatish
 
 ```python
-from actions.wikipedia_action import wikipedia_action
-from actions.wikidata_action import wikidata_action
+from uzwiki import wikipedia_action, wikidata_action
 
 # Hikoya/tushuntirish kerak bo'lsa:
 print(wikipedia_action({"action": "summary", "query": "Amir Temur", "lang": "uz"}))
@@ -69,90 +60,63 @@ print(wikidata_action({"action": "property", "query": "Amir Temur",
 print(wikidata_action({"action": "facts", "query": "O'zbekiston", "lang": "uz"}))
 ```
 
-`wikidata_action`dagi `prop` uchun tayyor nomlar: `tug'ilgan_sana`,
-`vafot_sana`, `tug'ilgan_joy`, `fuqaroligi`, `kasbi`, `poytaxti`,
-`aholisi`, `maydoni`, `koordinata`, `rasmiy_til`, `valyuta`, `davlati`
-va boshqalar (to'liq ro'yxat faylning `PROPERTY_MAP` qismida). Xohlagan
-xom Wikidata P-kodini ham (`"P569"` kabi) to'g'ridan-to'g'ri berish mumkin.
+| | Wikipedia (`wikipedia_action`) | Wikidata (`wikidata_action`) |
+|---|---|---|
+| Nima qaytaradi | O'qiladigan matn, paragraf | Aniq faktlar (sana, raqam, koordinata) |
+| Qachon ishlatiladi | "X kim edi?", "Y haqida gapir" | "Qachon tug'ilgan?", "Aholisi qancha?" |
+| `action` qiymatlari | `search`, `summary`, `full`, `random`, `sections` | `search`, `facts`, `property` |
 
-## 6. USER_AGENT'ni o'zgartirish (muhim)
+`wikidata_action`dagi `prop` uchun tayyor nomlar: `tug'ilgan_sana`, `vafot_sana`, `tug'ilgan_joy`,
+`fuqaroligi`, `kasbi`, `poytaxti`, `aholisi`, `maydoni`, `koordinata`, `rasmiy_til`, `valyuta`,
+`davlati` va boshqalar (to'liq ro'yxat: `uzwiki.PROPERTY_MAP`). Xom Wikidata P-kodini ham
+(`"P569"` kabi) to'g'ridan-to'g'ri berish mumkin.
 
-Wikimedia siyosati bo'yicha har bir ilova o'zini tanitadigan User-Agent
-yuborishi kerak. Har ikkala faylda ham:
+## Gemini tarjima qatlami (`wiki_lookup`)
 
-```python
-USER_AGENT = "AveliaAssistant/1.0 (https://github.com/your-repo; contact@example.com)"
-```
-
-qatorini o'zingizning haqiqiy ma'lumotingizga almashtiring.
-
----
-
-## 7. Gemini tarjima qatlami (`wiki_smart.py`)
-
-Sizning talabingizga ko'ra qo'shildi: **Wikipedia/Wikidata'ga har doim
-ingliz tilida murojaat qilinadi (foydalanuvchi aniq "o'zbekcha qidir"
-demasa), natija esa har doim Gemini orqali o'zbek tiliga tarjima qilinib
-qaytariladi.**
-
-Fayllar:
-- `actions/gemini_text_tools.py` — Gemini bilan uchta vazifa: `translate_to_english`,
-  `fix_uzbek_spelling`, `ensure_uzbek` (til aniqlash + kerak bo'lsa tarjima).
-- `actions/wiki_smart.py` — yuqoridagilarni `wikipedia_action`/`wikidata_action`
-  bilan birlashtiruvchi yagona `wiki_lookup()` funksiyasi.
-
-**Standalone sinash uchun** (`test_wikipedia.py` ichidagi SMART testlar):
-
-```bash
-cp config/api_keys.json.example config/api_keys.json
-```
-
-va faylga haqiqiy Gemini API kalitingizni yozing:
-
-```json
-{"gemini_api_key": "AIzaSy...."}
-```
-
-Keyin `python test_wikipedia.py` — endi WIKI/WIKIDATA testlaridan keyin 3 ta
-SMART test ham ishga tushadi. **Eslatma:** `config/api_keys.json` bo'lmasa
-ham dastur qulab tushmaydi — Gemini chaqiruvi xato bersa, `gemini_text_tools.py`
-shunchaki asl (tarjima qilinmagan) matnni qaytaradi.
-
-`TEXT_MODEL` qatorini (`actions/gemini_text_tools.py` ichida) o'zingizdagi
-google-genai SDK versiyasida mavjud bo'lgan model nomiga moslang.
-
-## 8. Avelia'ga ulash — to'liq tayyor kod
-
-Sinovdan o'tgach, quyidagi o'zgarishlarni Avelia'ning `main.py`siga kiritasiz.
-**Diqqat:** endi Avelia'ga faqat BITTA yangi tool qo'shiladi — `wiki_lookup`,
-chunki til mantig'i (ingliz/o'zbek, tarjima) endi shu tool ichida avtomatik
-hal qilinadi.
-
-### 8.1. Fayllarni ko'chirish
-
-To'rtala faylni Avelia'ning `actions/` papkasiga ko'chiring:
-- `wikipedia_action.py`
-- `wikidata_action.py`
-- `gemini_text_tools.py`
-- `wiki_smart.py`
-
-(`config/api_keys.json` Avelia'da allaqachon mavjud — `gemini_api_key`
-maydoni bor bo'lsa, qo'shimcha hech narsa qilish shart emas, chunki
-`gemini_text_tools.py` xuddi shu faylni o'qiydi.)
-
-### 8.2. Import qo'shish
-
-`main.py`dagi boshqa `actions.*` importlari yoniga:
+`wiki_lookup` so'rovni Gemini orqali tayyorlaydi (inglizchaga tarjima qiladi yoki o'zbekcha imloni
+tuzatadi), Wikipedia/Wikidata'dan qidiradi va natijani **har doim o'zbek tilida** qaytaradi.
 
 ```python
-from actions.wiki_smart import wiki_lookup
+import uzwiki
+
+uzwiki.set_api_key("AIzaSy...")   # yoki GEMINI_API_KEY muhit o'zgaruvchisi
+print(uzwiki.wiki_lookup({"query": "amir temur kim edi"}))
+print(uzwiki.wiki_lookup({"query": "ozbekistn aholisi qancha", "source": "wikidata",
+                          "mode": "property", "prop": "aholisi", "lang_hint": "uz"}))
 ```
 
-(`wikipedia_action`, `wikidata_action`, `gemini_text_tools` bevosita
-`main.py`da kerak emas — ular `wiki_smart.py` ichida allaqachon import
-qilingan.)
+API kalit quyidagi tartibda qidiriladi:
 
-### 8.3. TOOL_DECLARATIONS ro'yxatiga qo'shish
+1. `uzwiki.set_api_key("...")`
+2. `GEMINI_API_KEY` muhit o'zgaruvchisi
+3. Joriy papkadagi `config/api_keys.json` (namuna: [`config/api_keys.json.example`](config/api_keys.json.example))
+
+Kalit topilmasa yoki `google-genai` o'rnatilmagan bo'lsa, dastur qulab tushmaydi —
+`wiki_lookup` shunchaki tarjima qilinmagan natijani qaytaradi. Modelni o'zgartirish:
+`uzwiki.gemini_tools.TEXT_MODEL = "models/..."`.
+
+## User-Agent (muhim)
+
+Wikimedia siyosati bo'yicha har bir ilova o'zini tanitadigan User-Agent yuborishi kerak.
+Standart qiymat: `uzwiki/<versiya> (https://github.com/Abror5555/wiki)`. O'z ilovangiz uchun
+o'zgartiring:
+
+```python
+uzwiki.set_user_agent("MyBot/1.0 (https://github.com/me/mybot; me@example.com)")
+```
+
+yoki `UZWIKI_USER_AGENT` muhit o'zgaruvchisi orqali.
+
+## Ovozli yordamchiga ulash (masalan, Avelia)
+
+1. O'rnating: `pip install "uzwiki[gemini]"`
+2. Import qiling:
+
+   ```python
+   from uzwiki import wiki_lookup
+   ```
+
+3. `TOOL_DECLARATIONS` ro'yxatiga qo'shing:
 
 ```python
     {
@@ -203,25 +167,41 @@ qilingan.)
     },
 ```
 
-### 8.4. `_execute_tool` ichidagi dispatch (elif zanjiri)
+4. `_execute_tool` ichidagi dispatch'ga qo'shing:
 
-`elif name == "web_search":` blokidan keyin qo'shing:
+   ```python
+               elif name == "wiki_lookup":
+                   r = await loop.run_in_executor(None, lambda: wiki_lookup(args, player=self.ui))
+                   result = r or "Ma'lumot topilmadi."
+                   self.ui.show_content(f"WIKI — {args.get('query', '')[:38]}", result)
+   ```
 
-```python
-            elif name == "wiki_lookup":
-                r = await loop.run_in_executor(None, lambda: wiki_lookup(args, player=self.ui))
-                result = r or "Ma'lumot topilmadi."
-                self.ui.show_content(f"WIKI — {args.get('query', '')[:38]}", result)
+Avelia'ning `config/api_keys.json` fayli bo'lsa, `uzwiki` kalitni o'sha yerdan o'zi o'qiydi
+(dastur loyiha papkasidan ishga tushirilganda). `wiki_lookup` odatda 2 ta Gemini va 1-2 ta
+Wikipedia/Wikidata so'rovini ketma-ket bajaradi (taxminan 2-5 soniya), shuning uchun uni
+`run_in_executor` orqali chaqirish tavsiya etiladi.
+
+## Ishlab chiqish
+
+```bash
+git clone https://github.com/Abror5555/wiki
+cd wiki
+pip install -e ".[dev,gemini]"
+pytest                      # internetsiz testlar
+python examples/demo.py     # haqiqiy so'rovlar bilan namoyish + interaktiv rejim
 ```
 
-**Muhim eslatma — ishlash tezligi:** `wiki_lookup` har bir chaqiruvda odatda
-2 ta Gemini matn-so'rovi (tarjima/imlo + yakuniy o'zbekchalashtirish) va 1-2
-ta Wikipedia/Wikidata so'rovini ketma-ket bajaradi. Bu ovozli javobni odatiy
-`web_search`ga qaraganda biroz sekinroq qiladi (taxminan 2-5 soniya). Bu
-me'yorda — `run_in_executor` orqali asosiy ovozli oqim bloklanmasligi
-allaqachon ta'minlangan.
+## PyPI'ga chiqarish (muallif uchun)
 
-Shu bilan tayyor. Sinab ko'rib, biror joyda muammo chiqsa — ayting.
+Yangi versiya chiqarish GitHub Actions orqali avtomatlashtirilgan
+([`.github/workflows/publish.yml`](.github/workflows/publish.yml)):
+
+1. **Bir martalik sozlash:** pypi.org'da akkaunt oching → *Your projects* → *Publishing* →
+   *Add a new pending publisher* → GitHub tab: Owner `Abror5555`, Repository `wiki`,
+   Workflow `publish.yml`, Environment `pypi`, PyPI project name `uzwiki`.
+2. `src/uzwiki/_meta.py` dagi `__version__` ni yangilang (masalan `0.1.1`).
+3. GitHub'da *Releases* → *Draft a new release* → teg `v0.1.1` → *Publish release*.
+   Workflow testlarni o'tkazadi, paketni yig'adi va PyPI'ga yuklaydi.
 
 ## Litsenziya
 
